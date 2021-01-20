@@ -1,32 +1,29 @@
-use std::collections::{HashSet};
-use std::fs::File;
-use std::io::{BufReader, BufRead, Error};
+use std::{cmp::Ordering, collections::HashSet, error::Error, fs};
 
-fn main() -> Result<(), Error> {
+fn main() -> Result<(), Box<dyn Error>> {
     let path = "./src/bin/1/input.txt";
-    let input = File::open(path)?;
-    let buffered = BufReader::new(input);
 
-    let mut nums = Vec::new();
-    for line in buffered.lines() {
-        let num = line?.parse::<u16>().unwrap();
-        nums.push(num);
-    }
+    let numbers_str = fs::read_to_string(path)?;
+
+    let mut nums = numbers_str
+        .lines()
+        .map(|num_str| num_str.parse::<u64>())
+        .collect::<Result<Vec<_>, _>>()?;
 
     println!("{:?}", two_sum_2020(&nums));
-    println!("{:?}", three_sum_2020(&nums));
+    println!("{:?}", three_sum_2020(&mut nums));
 
     Ok(())
 }
 
-fn two_sum_2020(nums: &Vec<u16>) -> Option<u32> {
+fn two_sum_2020(nums: &[u64]) -> Option<u64> {
     let mut set = HashSet::new();
 
     for n in nums {
         let factor = 2020 - n;
 
         if set.contains(&factor) {
-            return Some(*n as u32 * factor as u32);
+            return Some(n * factor);
         } else {
             set.insert(n);
         }
@@ -35,27 +32,22 @@ fn two_sum_2020(nums: &Vec<u16>) -> Option<u32> {
     None
 }
 
-fn three_sum_2020(nums: &Vec<u16>) -> Option<u32> {
-    let mut sorted = nums.clone();
-    sorted.sort();
+fn three_sum_2020(nums: &mut Vec<u64>) -> Option<u64> {
+    nums.sort();
 
-    for a in 0..sorted.len() {
-        let target = 2020 - sorted[a];
-        let mut l = a+1;
-        let mut r = sorted.len() - 1;
+    for a in 0..nums.len() {
+        let target = 2020 - nums[a];
+        let mut l = a + 1;
+        let mut r = nums.len() - 1;
 
         while l < r {
-            if sorted[l] + sorted[r] == target {
-                return Some(sorted[a] as u32 * sorted[l] as u32 * sorted[r] as u32);
-            } else if sorted[l] + sorted[r] < target {
-                l += 1;
-            } else {
-                r -= 1;
+            match (nums[l] + nums[r]).cmp(&target) {
+                Ordering::Equal => return Some(nums[a] * nums[l] * nums[r]),
+                Ordering::Less => l += 1,
+                Ordering::Greater => r -= 1,
             }
         }
     }
 
     None
 }
-
-
